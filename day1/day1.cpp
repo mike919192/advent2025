@@ -1,8 +1,8 @@
 
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <sstream>
+#include <string>
 #include <vector>
 
 std::vector<int> read_file()
@@ -26,7 +26,7 @@ std::vector<int> read_file()
     return rotations;
 }
 
-struct safe_part1_t {
+struct safe_part1 {
     int current_position{ 0 };
     int count_zero{ 0 };
 
@@ -43,15 +43,15 @@ struct safe_part1_t {
     }
 };
 
-struct safe_part2_t {
+struct safe_part2 {
     int current_position{ 0 };
     int count_zero{ 0 };
 
     void turn(int rotation)
     {
-        int goto_position = current_position + rotation;
-        int direction = rotation > 0 ? 1 : -1;
-        while(current_position != goto_position) {
+        const int goto_position = current_position + rotation;
+        const int direction = rotation > 0 ? 1 : -1;
+        while (current_position != goto_position) {
             current_position += direction;
             if (current_position % 100 == 0)
                 count_zero++;
@@ -66,8 +66,8 @@ struct safe_part2_t {
 int main()
 {
     auto rotations = read_file();
-    safe_part1_t safe{ 50 };
-    safe_part2_t safe2{ 50 };
+    safe_part1 safe{ .current_position = 50 };
+    safe_part2 safe2{ .current_position = 50 };
 
     for (auto rot : rotations) {
         safe.turn(rot);
