@@ -26,7 +26,7 @@ std::vector<int> read_file()
     return rotations;
 }
 
-struct safe_t {
+struct safe_part1_t {
     int current_position{ 0 };
     int count_zero{ 0 };
 
@@ -43,13 +43,37 @@ struct safe_t {
     }
 };
 
+struct safe_part2_t {
+    int current_position{ 0 };
+    int count_zero{ 0 };
+
+    void turn(int rotation)
+    {
+        int goto_position = current_position + rotation;
+        int direction = rotation > 0 ? 1 : -1;
+        while(current_position != goto_position) {
+            current_position += direction;
+            if (current_position % 100 == 0)
+                count_zero++;
+        }
+        while (current_position < 0)
+            current_position += 100;
+        while (current_position >= 100)
+            current_position -= 100;
+    }
+};
+
 int main()
 {
     auto rotations = read_file();
-    safe_t safe{ 50 };
+    safe_part1_t safe{ 50 };
+    safe_part2_t safe2{ 50 };
 
-    for (auto rot : rotations)
+    for (auto rot : rotations) {
         safe.turn(rot);
+        safe2.turn(rot);
+    }
 
     std::cout << safe.count_zero << '\n';
+    std::cout << safe2.count_zero << '\n';
 }
