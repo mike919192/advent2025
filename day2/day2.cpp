@@ -26,7 +26,7 @@ std::vector<pair_t> read_file()
             if (!(ss >> num1 >> dash >> num2))
                 break;
 
-            pairs.push_back(pair_t(num1, num2));
+            pairs.emplace_back(num1, num2);
 
             if (!(ss >> comma))
                 break;
@@ -36,9 +36,9 @@ std::vector<pair_t> read_file()
     return pairs;
 }
 
-long part1(const std::vector<pair_t> &pairs)
+long find_invalid_ids(const std::vector<pair_t> &pairs, const std::string &regex)
 {
-    std::regex repeat_regex("(^\\d+)+\\1$");
+    const std::regex repeat_regex(regex);
     long sum{ 0 };
 
     for (const auto &pair : pairs) {
@@ -48,35 +48,9 @@ long part1(const std::vector<pair_t> &pairs)
             auto check_end = std::sregex_iterator();
 
             for (std::sregex_iterator i = check_begin; i != check_end; ++i) {
-                std::smatch match = *i;
-                std::string match_str = match.str();
+                const std::smatch &match = *i;
 
-                if (match.size() > 0) {
-                    sum += num;
-                }
-            }
-        }
-    }
-
-    return sum;
-}
-
-long part2(const std::vector<pair_t> &pairs)
-{
-    std::regex repeat_regex("(^\\d+)+\\1{1,}$");
-    long sum{ 0 };
-
-    for (const auto &pair : pairs) {
-        for (long num = pair.first; num <= pair.second; num++) {
-            auto check_str = std::to_string(num);
-            auto check_begin = std::sregex_iterator(check_str.begin(), check_str.end(), repeat_regex);
-            auto check_end = std::sregex_iterator();
-
-            for (std::sregex_iterator i = check_begin; i != check_end; ++i) {
-                std::smatch match = *i;
-                std::string match_str = match.str();
-
-                if (match.size() > 0) {
+                if (!match.empty()) {
                     sum += num;
                 }
             }
@@ -90,8 +64,8 @@ int main()
 {
     const auto pairs = read_file();
 
-    long sum_part1 = part1(pairs);
+    const long sum_part1 = find_invalid_ids(pairs, "(^\\d+)+\\1$");
     std::cout << sum_part1 << '\n';
-    long sum_part2 = part2(pairs);    
+    const long sum_part2 = find_invalid_ids(pairs, "(^\\d+)+\\1{1,}$");
     std::cout << sum_part2 << '\n';
 }
