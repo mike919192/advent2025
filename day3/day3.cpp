@@ -24,7 +24,7 @@ battery_map_t read_file()
         char batt_char{ 0 };
 
         while (ss >> batt_char) {
-            batteries.back().push_back(advt::char_to_string(batt_char));
+            batteries.back().push_back(advt::char_to_int(batt_char));
         }
     }
 
