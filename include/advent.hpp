@@ -60,4 +60,27 @@ inline bool is_pos_on_map(const xy_pos &pos, const xy_pos &dim)
     return pos.x >= 0 && pos.y >= 0 && pos.x < dim.x && pos.y < dim.y;
 }
 
+template <typename t_t>
+struct map : public t_t {
+    auto &&get_pos(const xy_pos &pos) const
+    {
+        return this->at(pos.y).at(pos.x);
+    }
+
+    auto &&get_pos(const xy_pos &pos)
+    {
+        return this->at(pos.y).at(pos.x);
+    }
+
+    auto &&get_pos(int x, int y) const
+    {
+        return this->at(y).at(x);
+    }
+
+    auto &&get_pos(int x, int y)
+    {
+        return this->at(y).at(x);
+    }
+};
+
 }

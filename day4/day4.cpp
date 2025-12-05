@@ -7,7 +7,7 @@
 #include <vector>
 
 using map_row_t = std::vector<char>;
-using paper_map_t = std::vector<map_row_t>;
+using paper_map_t = advt::map<std::vector<map_row_t>>;
 
 paper_map_t read_file()
 {
@@ -35,15 +35,15 @@ int count_accessible(t_t &map)
 
     for (int y = 0; y < dim.y; y++) {
         for (int x = 0; x < dim.x; x++) {
-            if (map.at(y).at(x) != '@')
+            if (map.get_pos(x, y) != '@')
                 continue;
 
             int count_adjacent{ 0 };
 
             for (int sub_y = -1; sub_y <= 1; sub_y++) {
                 for (int sub_x = -1; sub_x <= 1; sub_x++) {
-                    if (advt::is_pos_on_map(advt::xy_pos{ x + sub_x, y + sub_y }, dim) &&
-                        map.at(y + sub_y).at(x + sub_x) != '.') {
+                    advt::xy_pos check_pos{ x + sub_x, y + sub_y };
+                    if (advt::is_pos_on_map(check_pos, dim) && map.get_pos(check_pos) != '.') {
                         count_adjacent++;
                     }
                 }
@@ -55,7 +55,7 @@ int count_accessible(t_t &map)
                 //part2 only
                 if constexpr (!std::is_const_v<t_t>) {
                     //mark as x, to be cleaned up
-                    map.at(y).at(x) = 'x';
+                    map.get_pos(x, y) = 'x';
                 }
             }
         }
