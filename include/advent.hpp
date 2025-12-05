@@ -10,8 +10,54 @@ inline int char_to_int(char in)
 {
     if (in < '0' || in > '9')
         throw std::runtime_error("Char is not a number!");
-    
+
     return in - '0';
+}
+
+struct xy_pos {
+    int x{ 0 };
+    int y{ 0 };
+
+    // compound assignment (does not need to be a member,
+    // but often is, to modify the private members)
+    xy_pos &operator+=(const xy_pos &rhs)
+    {
+        x += rhs.x;
+        y += rhs.y;
+        return *this; // return the result by reference
+    }
+
+    xy_pos &operator-=(const xy_pos &rhs)
+    {
+        x -= rhs.x;
+        y -= rhs.y;
+        return *this; // return the result by reference
+    }
+
+    // friends defined inside class body are inline and are hidden from non-ADL lookup
+    // passing lhs by value helps optimize chained a+b+c
+    // otherwise, both parameters may be const references
+    friend xy_pos operator+(xy_pos lhs, const xy_pos &rhs)
+    {
+        lhs += rhs; // reuse compound assignment
+        return lhs; // return the result by value (uses move constructor)
+    }
+
+    friend xy_pos operator-(xy_pos lhs, const xy_pos &rhs)
+    {
+        lhs -= rhs; // reuse compound assignment
+        return lhs; // return the result by value (uses move constructor)
+    }
+
+    xy_pos operator-()
+    {
+        return xy_pos{ -x, -y };
+    }
+};
+
+inline bool is_pos_on_map(const xy_pos &pos, const xy_pos &dim)
+{
+    return !(pos.x < 0 || pos.y < 0 || pos.x >= dim.x || pos.y >= dim.y);
 }
 
 }
