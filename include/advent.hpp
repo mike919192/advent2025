@@ -49,7 +49,7 @@ struct xy_pos {
         return lhs; // return the result by value (uses move constructor)
     }
 
-    xy_pos operator-()
+    xy_pos operator-() const
     {
         return xy_pos{ -x, -y };
     }
@@ -57,7 +57,7 @@ struct xy_pos {
 
 inline bool is_pos_on_map(const xy_pos &pos, const xy_pos &dim)
 {
-    return !(pos.x < 0 || pos.y < 0 || pos.x >= dim.x || pos.y >= dim.y);
+    return pos.x >= 0 && pos.y >= 0 && pos.x < dim.x && pos.y < dim.y;
 }
 
 }
