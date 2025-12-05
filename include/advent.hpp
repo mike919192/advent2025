@@ -62,22 +62,22 @@ inline bool is_pos_on_map(const xy_pos &pos, const xy_pos &dim)
 
 template <typename t_t>
 struct map : public t_t {
-    auto &&get_pos(const xy_pos &pos) const
+    auto &&at_pos(const xy_pos &pos) const
     {
         return this->at(pos.y).at(pos.x);
     }
 
-    auto &&get_pos(const xy_pos &pos)
+    auto &&at_pos(const xy_pos &pos)
     {
         return this->at(pos.y).at(pos.x);
     }
 
-    auto &&get_pos(int x, int y) const
+    auto &&at_pos(int x, int y) const
     {
         return this->at(y).at(x);
     }
 
-    auto &&get_pos(int x, int y)
+    auto &&at_pos(int x, int y)
     {
         return this->at(y).at(x);
     }

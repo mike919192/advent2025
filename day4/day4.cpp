@@ -35,7 +35,7 @@ int count_accessible(t_t &map)
 
     for (int y = 0; y < dim.y; y++) {
         for (int x = 0; x < dim.x; x++) {
-            if (map.get_pos(x, y) != '@')
+            if (map.at_pos(x, y) != '@')
                 continue;
 
             int count_adjacent{ 0 };
@@ -43,7 +43,7 @@ int count_accessible(t_t &map)
             for (int sub_y = -1; sub_y <= 1; sub_y++) {
                 for (int sub_x = -1; sub_x <= 1; sub_x++) {
                     advt::xy_pos check_pos{ x + sub_x, y + sub_y };
-                    if (advt::is_pos_on_map(check_pos, dim) && map.get_pos(check_pos) != '.') {
+                    if (advt::is_pos_on_map(check_pos, dim) && map.at_pos(check_pos) != '.') {
                         count_adjacent++;
                     }
                 }
@@ -55,7 +55,7 @@ int count_accessible(t_t &map)
                 //part2 only
                 if constexpr (!std::is_const_v<t_t>) {
                     //mark as x, to be cleaned up
-                    map.get_pos(x, y) = 'x';
+                    map.at_pos(x, y) = 'x';
                 }
             }
         }
