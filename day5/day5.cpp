@@ -46,12 +46,14 @@ std::tuple<std::vector<pair_t>, std::vector<long>> read_file()
 //this algorithm requires the ranges to be sorted
 void part2_merge_ranges(std::vector<pair_t> &id_ranges)
 {
-    for (size_t i = 0; i < id_ranges.size() - 1; i++) {
-        for (size_t j = i + 1; j < id_ranges.size(); j++) {
+    for (auto i = id_ranges.begin(); i < id_ranges.end() - 1; i++) {
+        for (auto j = i + 1; j < id_ranges.end(); j++) {
             //if (i) second is greater than (j) first than we can merge
-            if (id_ranges.at(i).second >= id_ranges.at(j).first - 1) {
-                id_ranges.at(i).second = std::max(id_ranges.at(i).second, id_ranges.at(j).second);
-                id_ranges.erase(id_ranges.begin() + j);
+            //-1 because we can merge a range that ends with 19 and the next begins with 20
+            if ((*i).second >= (*j).first - 1) {
+                //(j) second can be less than (i) if the 2nd range is within the first
+                (*i).second = std::max((*i).second, (*j).second);
+                id_ranges.erase(j);
                 j--;
             } else {
                 break;
