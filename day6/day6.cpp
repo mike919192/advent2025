@@ -1,4 +1,5 @@
 
+#include "advent.hpp"
 #include <algorithm>
 #include <array>
 #include <fstream>
@@ -11,9 +12,9 @@
 
 using num_row_t = std::vector<long>;
 
-std::tuple<std::vector<num_row_t>, std::vector<char>> read_file(int num_operands)
+std::tuple<std::vector<num_row_t>, std::vector<char>> part1_read_file(int num_operands, const std::string &filename)
 {
-    std::ifstream infile("input.txt");
+    std::ifstream infile(filename);
     std::vector<num_row_t> num_matrix;
     std::vector<char> ops;
 
@@ -44,6 +45,21 @@ std::tuple<std::vector<num_row_t>, std::vector<char>> read_file(int num_operands
     return { num_matrix, ops };
 }
 
+std::vector<std::string> part2_read_file(int num_operands, const std::string &filename)
+{
+    std::ifstream infile(filename);
+    std::vector<std::string> char_matrix;
+
+    for (int i = 0; i < num_operands; i++) {
+        std::string line;
+        std::getline(infile, line);
+
+        char_matrix.push_back(line);
+    }
+
+    return char_matrix;
+}
+
 long part1_do_op(char op, const std::vector<long> &operands)
 {
     long result{ 0 };
@@ -65,10 +81,37 @@ long part1_do_op(char op, const std::vector<long> &operands)
     return result;
 }
 
+std::vector<long> part2_decode_operands(const std::vector<std::string> &char_matrix, size_t &position)
+{
+    std::vector<long> operands;
+
+    while (position > 0) {
+        long scale{ 1 };
+        long num{ 0 };
+        bool all_spaces{ true };
+        for (size_t i = char_matrix.size(); i > 0; i--) {
+            char num_char = char_matrix.at(i - 1).at(position - 1);
+            if (num_char == ' ')
+                continue;
+            all_spaces = false;
+            num += advt::char_to_int(num_char) * scale;
+            scale *= 10;
+        }
+        position--;
+        if (!all_spaces)
+            operands.push_back(num);
+        else
+            break;
+    }
+
+    return operands;
+}
+
 int main()
 {
     int num_operands = 4;
-    const auto [num_matrix, ops] = read_file(num_operands);
+    std::string filename = "input.txt";
+    const auto [num_matrix, ops] = part1_read_file(num_operands, filename);
 
     long part1_result{ 0 };
 
@@ -81,4 +124,19 @@ int main()
     }
 
     std::cout << part1_result << '\n';
+
+    const auto char_matrix = part2_read_file(num_operands, filename);
+
+    size_t position{ char_matrix.front().size() };
+    size_t op_position{ ops.size() };
+    long part2_result{ 0 };
+
+    while(position > 0) {
+        const auto operands = part2_decode_operands(char_matrix, position);
+        long answer = part1_do_op(ops.at(op_position - 1), operands);
+        op_position--;
+        part2_result += answer;
+    }
+
+    std::cout << part2_result << '\n';
 }
