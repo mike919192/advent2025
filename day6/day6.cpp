@@ -74,7 +74,7 @@ long part1_do_op(char op, const std::vector<long> &operands)
         break;
 
     default:
-        std::runtime_error("Unknown op!");
+        throw std::runtime_error("Unknown op!");
         break;
     }
 
@@ -89,8 +89,8 @@ std::vector<long> part2_decode_operands(const std::vector<std::string> &char_mat
         long scale{ 1 };
         long num{ 0 };
         bool all_spaces{ true };
-        for (size_t i = char_matrix.size(); i > 0; i--) {
-            char num_char = char_matrix.at(i - 1).at(position - 1);
+        for (auto i = char_matrix.rbegin(); i < char_matrix.rend(); i++) {
+            const char num_char = (*i).at(position - 1);
             if (num_char == ' ')
                 continue;
             all_spaces = false;
@@ -109,16 +109,16 @@ std::vector<long> part2_decode_operands(const std::vector<std::string> &char_mat
 
 int main()
 {
-    int num_operands = 4;
-    std::string filename = "input.txt";
+    const int num_operands = 4;
+    const std::string filename = "input.txt";
     const auto [num_matrix, ops] = part1_read_file(num_operands, filename);
 
     long part1_result{ 0 };
 
     for (size_t i = 0; i < num_matrix.front().size(); i++) {
         std::vector<long> operands;
-        for (int j = 0; j < num_operands; j++)
-            operands.push_back(num_matrix.at(j).at(i));
+        for (const auto &row : num_matrix)
+            operands.push_back(row.at(i));
 
         part1_result += part1_do_op(ops.at(i), operands);
     }
@@ -128,14 +128,13 @@ int main()
     const auto char_matrix = part2_read_file(num_operands, filename);
 
     size_t position{ char_matrix.front().size() };
-    size_t op_position{ ops.size() };
+    auto op = ops.rbegin();
     long part2_result{ 0 };
 
-    while(position > 0) {
+    while (position > 0 && op < ops.rend()) {
         const auto operands = part2_decode_operands(char_matrix, position);
-        long answer = part1_do_op(ops.at(op_position - 1), operands);
-        op_position--;
-        part2_result += answer;
+        part2_result += part1_do_op(*op, operands);
+        op++;
     }
 
     std::cout << part2_result << '\n';
