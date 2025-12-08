@@ -1,13 +1,11 @@
 
 #include "advent.hpp"
-#include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 #include <tuple>
-#include <map>
-#include <vector>
 
 using manifold_map_t = std::map<advt::xy_pos, long>;
 
@@ -83,7 +81,7 @@ long part2_trace_beam(const advt::xy_pos &beam, const manifold_map_t &splitters,
     return splitters.at(local_beam);
 }
 
-//find splitter with maximum y and 0 count
+//splitter is ordered map so loop in reverse
 //trace beam paths
 //if hit bottom add 1
 //if hit other splitter add that value
