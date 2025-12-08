@@ -54,7 +54,35 @@ struct xy_pos {
         return xy_pos{ -x, -y };
     }
 
-    auto operator<=>(const xy_pos &) const = default;
+    friend bool operator<(const xy_pos &lhs, const xy_pos &rhs)
+    {
+        return std::tie(lhs.y, lhs.x) < std::tie(rhs.y, rhs.x); // keep the same order
+    }
+
+    friend bool operator>(const xy_pos &lhs, const xy_pos &rhs)
+    {
+        return rhs < lhs;
+    }
+
+    friend bool operator<=(const xy_pos &lhs, const xy_pos &rhs)
+    {
+        return !(lhs > rhs);
+    }
+
+    friend bool operator>=(const xy_pos &lhs, const xy_pos &rhs)
+    {
+        return !(lhs < rhs);
+    }
+
+    friend bool operator==(const xy_pos &lhs, const xy_pos &rhs)
+    {
+        return std::tie(lhs.y, lhs.x) == std::tie(rhs.y, rhs.x);
+    }
+
+    friend bool operator!=(const xy_pos &lhs, const xy_pos &rhs)
+    {
+        return !(lhs == rhs);
+    }
 };
 
 inline bool is_pos_on_map(const xy_pos &pos, const xy_pos &dim)
