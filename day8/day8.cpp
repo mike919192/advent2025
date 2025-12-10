@@ -55,16 +55,9 @@ distances_map_t part1_find_distances(const points_t &points)
 
 auto part1_find_point_in_group(points_groups_t &groups, const point_t &point)
 {
-    auto i = groups.begin();
-    while (i != groups.end()) {
-        for (const auto &pnt : (*i)) {
-            if (pnt == point)
-                return i;
-        }
-        i++;
-    }
-
-    return i;
+    auto glambda = [&point](const auto &a) { return a == point; };
+    auto glambda2 = [&glambda](const auto &a) { return std::ranges::any_of(a, glambda); };
+    return std::ranges::find_if(groups, glambda2);
 }
 
 std::tuple<points_groups_t, long> part1_find_groups(const distances_map_t &distances, long loops, size_t num_points)
