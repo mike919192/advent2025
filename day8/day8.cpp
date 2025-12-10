@@ -14,9 +14,9 @@ using points_t = std::vector<point_t>;
 using points_groups_t = std::vector<points_t>;
 using distances_map_t = std::map<long, std::array<std::array<long, 3>, 2>>;
 
-points_t read_file()
+points_t read_file(const std::string & filename)
 {
-    std::ifstream infile("input.txt");
+    std::ifstream infile(filename);
     points_t points;
 
     for (std::string line; std::getline(infile, line);) {
@@ -67,11 +67,11 @@ auto part1_find_point_in_group(points_groups_t & groups, const point_t & point)
     return i;
 }
 
-points_groups_t part1_find_groups(const distances_map_t & distances)
+std::tuple<points_groups_t, long> part1_find_groups(const distances_map_t & distances, long loops, size_t num_points)
 {
     points_groups_t groups;
     auto dis = distances.begin();
-    for (int i = 0 ; i < 1000; i++) {
+    for (long i = 0 ; i < loops; i++) {
         //check if either point is in a group
         auto i1 = part1_find_point_in_group(groups, (*dis).second.at(0));
         auto i2 = part1_find_point_in_group(groups, (*dis).second.at(1));
@@ -93,23 +93,32 @@ points_groups_t part1_find_groups(const distances_map_t & distances)
             groups.erase(i2);
         }
 
+        if (groups.size() == 1 && groups.at(0).size() == num_points) {
+            long mult_x = (*dis).second.at(0).at(0) * (*dis).second.at(1).at(0);
+            return {groups, mult_x};
+        }
+
         ++dis;
     }
 
-    return groups;
+    return {groups, 0};
 }
 
 int main()
 {
-    const auto points = read_file();
+    const auto points = read_file("input.txt");
 
     const auto distances = part1_find_distances(points);
 
-    auto groups = part1_find_groups(distances);
+    auto [groups, mult_x] = part1_find_groups(distances, 1000, points.size());
 
     std::ranges::sort(groups, [](const auto & a, const auto & b) { return a.size() > b.size(); });
 
     long part1_result = groups.at(0).size() * groups.at(1).size() * groups.at(2).size();
 
     std::cout << part1_result << '\n';
+
+    auto [groups2, part2_result] = part1_find_groups(distances, std::numeric_limits<long>::max(), points.size());
+
+    std::cout << part2_result << '\n';
 }
