@@ -12,8 +12,6 @@
 
 using points_t = std::vector<advt::xy_pos>;
 using areas_map_t = std::multimap<long, std::array<advt::xy_pos, 2>>;
-// using row_t = std::vector<char>;
-// using map_t = std::vector<row_t>;
 using map_t = std::unordered_map<advt::xy_pos, std::array<advt::xy_pos, 2>>;
 
 points_t read_file(const std::string &filename)
@@ -55,21 +53,6 @@ areas_map_t part1_find_areas(const points_t &points)
     return areas;
 }
 
-// std::array<advt::xy_pos, 2> part2_find_limits(const points_t &points)
-// {
-//     auto max_x_el = std::ranges::max_element(points, [](const auto &a, const auto &b) { return a.x < b.x; });
-//     int max_x = (*max_x_el).x;
-//     auto max_y_el = std::ranges::max_element(points, [](const auto &a, const auto &b) { return a.y < b.y; });
-//     int max_y = (*max_y_el).y;
-
-//     auto min_x_el = std::ranges::max_element(points, [](const auto &a, const auto &b) { return a.x > b.x; });
-//     int min_x = (*min_x_el).x;
-//     auto min_y_el = std::ranges::max_element(points, [](const auto &a, const auto &b) { return a.y > b.y; });
-//     int min_y = (*min_y_el).y;
-
-//     return { advt::xy_pos{ min_x - 1, min_y - 1 }, advt::xy_pos{ max_x + 1, max_y + 1 } };
-// }
-
 void normalize_dir(advt::xy_pos &dir)
 {
     int max = std::max(std::abs(dir.x), std::abs(dir.y));
@@ -102,8 +85,10 @@ std::tuple<map_t, bool> part2_trace_points(const points_t &points)
     advt::xy_pos last_dir{ 0, 0 };
     advt::xy_pos to_last_point{ 0, 0 };
 
-    for (auto i = points.begin(); i < points.end() - 1; ++i) {
+    for (auto i = points.begin(); i < points.end(); ++i) {
         auto i2 = i + 1;
+        if (i2 == points.end())
+            i2 = points.begin();
         advt::xy_pos dir = (*i2) - (*i);
         normalize_dir(dir);
         advt::xy_pos trace = *i;
@@ -116,19 +101,6 @@ std::tuple<map_t, bool> part2_trace_points(const points_t &points)
         degrees += determine_turn(last_dir, dir);
         last_dir = dir;
     }
-    auto i = points.end() - 1;
-    auto i2 = points.begin();
-    advt::xy_pos dir = (*i2) - (*i);
-    normalize_dir(dir);
-    advt::xy_pos trace = *i;
-    to_last_point = -last_dir;
-    while (trace != *i2) {
-        map.emplace(trace, std::array<advt::xy_pos, 2>{dir, to_last_point});
-        trace += dir;
-        to_last_point = -dir;
-    }
-    degrees += determine_turn(last_dir, dir);
-    last_dir = dir;
 
     //need to add reverse direction to first point
     map.at(points.at(0)).at(1) = -last_dir;
@@ -156,8 +128,10 @@ bool part2_check_rectangle(const map_t &map, const std::array<advt::xy_pos, 2> &
     std::array<advt::xy_pos, 4> check_pts = { advt::xy_pos{ 1, 0 }, advt::xy_pos{ 0, 1 }, advt::xy_pos{ -1, 0 },
                                                   advt::xy_pos{ 0, -1 } };
 
-    for (auto i = pts.begin(); i < pts.end() - 1; i++) {
+    for (auto i = pts.begin(); i < pts.end(); i++) {
         auto i2 = i + 1;
+        if (i2 == pts.end())
+            i2 = pts.begin();
         advt::xy_pos dir = (*i2) - (*i);
         normalize_dir(dir);
         advt::xy_pos trace = *i;
@@ -185,14 +159,7 @@ int main()
 
     std::cout << (*areas.rbegin()).first << '\n';
 
-    const auto [map, right_hand] = part2_trace_points(points);
-
-    // const auto limits = part2_find_limits(points);
-    // const auto size = limits.at(1) - limits.at(0) + advt::xy_pos{1, 1};
-
-    // map_t map = map_t(size.y);
-    // for (auto & row : map)
-    //     row = row_t(size.x);
+    const auto [map, clockwise] = part2_trace_points(points);
 
     long part2_answer {0};
     int test {0};
