@@ -14,7 +14,7 @@ using points_t = std::vector<advt::xy_pos>;
 using areas_map_t = std::map<long, std::array<advt::xy_pos, 2>>;
 // using row_t = std::vector<char>;
 // using map_t = std::vector<row_t>;
-using map_t = std::unordered_map<advt::xy_pos, advt::xy_pos>;
+using map_t = std::unordered_map<advt::xy_pos, std::array<advt::xy_pos, 2>>;
 
 points_t read_file(const std::string &filename)
 {
@@ -100,15 +100,18 @@ std::tuple<map_t, bool> part2_trace_points(const points_t &points)
     int degrees{ 0 };
     map_t map;
     advt::xy_pos last_dir{ 0, 0 };
+    advt::xy_pos to_last_point{ 0, 0 };
 
     for (auto i = points.begin(); i < points.end() - 1; ++i) {
         auto i2 = i + 1;
         advt::xy_pos dir = (*i2) - (*i);
         normalize_dir(dir);
         advt::xy_pos trace = *i;
+        to_last_point = -last_dir;
         while (trace != *i2) {
-            map.emplace(trace, dir);
+            map.emplace(trace, std::array<advt::xy_pos, 2>{dir, to_last_point});
             trace += dir;
+            to_last_point = -dir;
         }
         degrees += determine_turn(last_dir, dir);
         last_dir = dir;
@@ -118,12 +121,17 @@ std::tuple<map_t, bool> part2_trace_points(const points_t &points)
     advt::xy_pos dir = (*i2) - (*i);
     normalize_dir(dir);
     advt::xy_pos trace = *i;
+    to_last_point = -last_dir;
     while (trace != *i2) {
-        map.emplace(trace, dir);
+        map.emplace(trace, std::array<advt::xy_pos, 2>{dir, to_last_point});
         trace += dir;
+        to_last_point = -dir;
     }
     degrees += determine_turn(last_dir, dir);
     last_dir = dir;
+
+    //need to add reverse direction to first point
+    map.at(points.at(0)).at(1) = -last_dir;
 
     return { map, degrees > 0 };
 }
@@ -134,9 +142,10 @@ bool check_point(const map_t & map, const advt::xy_pos & pt, const advt::xy_pos 
     if (!map.contains(pt + dir))
         return true;
 
-    int degrees = determine_turn(dir, map.at(pt + dir));
+    int degrees = determine_turn(dir, map.at(pt + dir)[0]);
+    int degrees2 = determine_turn(dir, map.at(pt + dir)[1]);
     
-    return degrees >= 0;
+    return degrees >= 0 && degrees2 <= 0;
 }
 
 bool part2_check_rectangle(const map_t &map, const std::array<advt::xy_pos, 2> &rect)
