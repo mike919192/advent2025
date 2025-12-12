@@ -11,7 +11,7 @@
 #include <vector>
 
 using points_t = std::vector<advt::xy_pos>;
-using areas_map_t = std::map<long, std::array<advt::xy_pos, 2>>;
+using areas_map_t = std::multimap<long, std::array<advt::xy_pos, 2>>;
 // using row_t = std::vector<char>;
 // using map_t = std::vector<row_t>;
 using map_t = std::unordered_map<advt::xy_pos, std::array<advt::xy_pos, 2>>;
@@ -179,7 +179,7 @@ bool part2_check_rectangle(const map_t &map, const std::array<advt::xy_pos, 2> &
 
 int main()
 {
-    const auto points = read_file("test.txt");
+    const auto points = read_file("input.txt");
 
     const auto areas = part1_find_areas(points);
 
@@ -195,6 +195,7 @@ int main()
     //     row = row_t(size.x);
 
     long part2_answer {0};
+    int test {0};
 
     for (auto i = areas.rbegin(); i != areas.rend(); i++) {
         bool pass = part2_check_rectangle(map, (*i).second);
@@ -202,6 +203,8 @@ int main()
             part2_answer = (*i).first;
             break;
         }
+        std::cout << test << '\n';
+        test++;
     }
     
 
