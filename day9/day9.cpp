@@ -1,15 +1,20 @@
 
+#include "advent.hpp"
+#include <algorithm>
 #include <array>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
-using point_t = std::array<long, 2>;
-using points_t = std::vector<point_t>;
-using areas_map_t = std::map<long, std::array<point_t, 2>>;
+using points_t = std::vector<advt::xy_pos>;
+using areas_map_t = std::map<long, std::array<advt::xy_pos, 2>>;
+// using row_t = std::vector<char>;
+// using map_t = std::vector<row_t>;
+using map_t = std::unordered_map<advt::xy_pos, advt::xy_pos>;
 
 points_t read_file(const std::string &filename)
 {
@@ -24,7 +29,7 @@ points_t read_file(const std::string &filename)
 
         (ss >> x >> comma >> y);
 
-        points.push_back({ x, y });
+        points.emplace_back(x, y);
     }
 
     return points;
@@ -36,9 +41,13 @@ areas_map_t part1_find_areas(const points_t &points)
 
     for (auto i = points.begin(); i < points.end(); i++) {
         for (auto j = i + 1; j < points.end(); j++) {
-            long area = (std::abs((*i)[0] - (*j)[0]) + 1) * (std::abs((*i)[1] - (*j)[1]) + 1);
+            long i_x = static_cast<long>((*i).x);
+            long i_y = static_cast<long>((*i).y);
+            long j_x = static_cast<long>((*j).x);
+            long j_y = static_cast<long>((*j).y);
+            long area = (std::abs(i_x - j_x) + 1) * (std::abs(i_y - j_y) + 1);
 
-            std::array<point_t, 2> test = { (*i), (*j) };
+            std::array<advt::xy_pos, 2> test = { (*i), (*j) };
             areas.emplace(area, test);
         }
     }
@@ -46,11 +55,146 @@ areas_map_t part1_find_areas(const points_t &points)
     return areas;
 }
 
+// std::array<advt::xy_pos, 2> part2_find_limits(const points_t &points)
+// {
+//     auto max_x_el = std::ranges::max_element(points, [](const auto &a, const auto &b) { return a.x < b.x; });
+//     int max_x = (*max_x_el).x;
+//     auto max_y_el = std::ranges::max_element(points, [](const auto &a, const auto &b) { return a.y < b.y; });
+//     int max_y = (*max_y_el).y;
+
+//     auto min_x_el = std::ranges::max_element(points, [](const auto &a, const auto &b) { return a.x > b.x; });
+//     int min_x = (*min_x_el).x;
+//     auto min_y_el = std::ranges::max_element(points, [](const auto &a, const auto &b) { return a.y > b.y; });
+//     int min_y = (*min_y_el).y;
+
+//     return { advt::xy_pos{ min_x - 1, min_y - 1 }, advt::xy_pos{ max_x + 1, max_y + 1 } };
+// }
+
+void normalize_dir(advt::xy_pos &dir)
+{
+    int max = std::max(std::abs(dir.x), std::abs(dir.y));
+    if (max == 0)
+        throw std::runtime_error("Max is zero!");
+    dir.x /= max;
+    dir.y /= max;
+}
+
+int determine_turn(const advt::xy_pos &last_dir, const advt::xy_pos &dir)
+{
+    if ((last_dir == advt::xy_pos{ 1, 0 } && dir == advt::xy_pos{ 0, 1 }) ||
+        (last_dir == advt::xy_pos{ 0, 1 } && dir == advt::xy_pos{ -1, 0 }) ||
+        (last_dir == advt::xy_pos{ -1, 0 } && dir == advt::xy_pos{ 0, -1 }) ||
+        (last_dir == advt::xy_pos{ 0, -1 } && dir == advt::xy_pos{ 1, 0 }))
+        return 90;
+    else if ((last_dir == advt::xy_pos{ 0, 1 } && dir == advt::xy_pos{ 1, 0 }) ||
+             (last_dir == advt::xy_pos{ 1, 0 } && dir == advt::xy_pos{ 0, -1 }) ||
+             (last_dir == advt::xy_pos{ 0, -1 } && dir == advt::xy_pos{ -1, 0 }) ||
+             (last_dir == advt::xy_pos{ -1, 0 } && dir == advt::xy_pos{ 0, 1 }))
+        return -90;
+
+    return 0;
+}
+
+std::tuple<map_t, bool> part2_trace_points(const points_t &points)
+{
+    int degrees{ 0 };
+    map_t map;
+    advt::xy_pos last_dir{ 0, 0 };
+
+    for (auto i = points.begin(); i < points.end() - 1; ++i) {
+        auto i2 = i + 1;
+        advt::xy_pos dir = (*i2) - (*i);
+        normalize_dir(dir);
+        advt::xy_pos trace = *i;
+        while (trace != *i2) {
+            map.emplace(trace, dir);
+            trace += dir;
+        }
+        degrees += determine_turn(last_dir, dir);
+        last_dir = dir;
+    }
+    auto i = points.end() - 1;
+    auto i2 = points.begin();
+    advt::xy_pos dir = (*i2) - (*i);
+    normalize_dir(dir);
+    advt::xy_pos trace = *i;
+    while (trace != *i2) {
+        map.emplace(trace, dir);
+        trace += dir;
+    }
+    degrees += determine_turn(last_dir, dir);
+    last_dir = dir;
+
+    return { map, degrees > 0 };
+}
+
+bool check_point(const map_t & map, const advt::xy_pos & pt, const advt::xy_pos & dir)
+{
+    //if no line in that direction return true
+    if (!map.contains(pt + dir))
+        return true;
+
+    int degrees = determine_turn(dir, map.at(pt + dir));
+    
+    return degrees >= 0;
+}
+
+bool part2_check_rectangle(const map_t &map, const std::array<advt::xy_pos, 2> &rect)
+{
+    std::array<advt::xy_pos, 4> pts = { rect.at(0), advt::xy_pos{ rect.at(0).x, rect.at(1).y }, rect.at(1),
+                                        advt::xy_pos{ rect.at(1).x, rect.at(0).y } };
+
+    std::array<advt::xy_pos, 4> check_pts = { advt::xy_pos{ 1, 0 }, advt::xy_pos{ 0, 1 }, advt::xy_pos{ -1, 0 },
+                                                  advt::xy_pos{ 0, -1 } };
+
+    for (auto i = pts.begin(); i < pts.end() - 1; i++) {
+        auto i2 = i + 1;
+        advt::xy_pos dir = (*i2) - (*i);
+        normalize_dir(dir);
+        advt::xy_pos trace = *i;
+        while (trace != *i2) {
+            if (map.contains(trace)) {
+                trace += dir;
+                continue;
+            }
+            for (const auto & check_pt : check_pts) {
+                if (!check_point(map, trace, check_pt))
+                    return false;
+            }
+            trace += dir;
+        }
+    }
+
+    return true;
+}
+
 int main()
 {
-    const auto points = read_file("input.txt");
+    const auto points = read_file("test.txt");
 
     const auto areas = part1_find_areas(points);
 
     std::cout << (*areas.rbegin()).first << '\n';
+
+    const auto [map, right_hand] = part2_trace_points(points);
+
+    // const auto limits = part2_find_limits(points);
+    // const auto size = limits.at(1) - limits.at(0) + advt::xy_pos{1, 1};
+
+    // map_t map = map_t(size.y);
+    // for (auto & row : map)
+    //     row = row_t(size.x);
+
+    long part2_answer {0};
+
+    for (auto i = areas.rbegin(); i != areas.rend(); i++) {
+        bool pass = part2_check_rectangle(map, (*i).second);
+        if (pass) {
+            part2_answer = (*i).first;
+            break;
+        }
+    }
+    
+
+    std::cout << part2_answer << '\n';
 }
