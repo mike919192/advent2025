@@ -2,17 +2,21 @@
 #include "advent.hpp"
 #include <algorithm>
 #include <array>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
 using points_t = std::vector<advt::xy_pos>;
 using areas_map_t = std::multimap<long, std::array<advt::xy_pos, 2>>;
 using map_t = std::unordered_map<advt::xy_pos, std::array<advt::xy_pos, 2>>;
+using keepout_map_t = std::unordered_map<advt::xy_pos, char>;
 
 points_t read_file(const std::string &filename)
 {
@@ -39,14 +43,13 @@ areas_map_t part1_find_areas(const points_t &points)
 
     for (auto i = points.begin(); i < points.end(); i++) {
         for (auto j = i + 1; j < points.end(); j++) {
-            long i_x = static_cast<long>((*i).x);
-            long i_y = static_cast<long>((*i).y);
-            long j_x = static_cast<long>((*j).x);
-            long j_y = static_cast<long>((*j).y);
-            long area = (std::abs(i_x - j_x) + 1) * (std::abs(i_y - j_y) + 1);
+            const long i_x = static_cast<long>((*i).x);
+            const long i_y = static_cast<long>((*i).y);
+            const long j_x = static_cast<long>((*j).x);
+            const long j_y = static_cast<long>((*j).y);
+            const long area = (std::abs(i_x - j_x) + 1) * (std::abs(i_y - j_y) + 1);
 
-            std::array<advt::xy_pos, 2> test = { (*i), (*j) };
-            areas.emplace(area, test);
+            areas.emplace(area, std::array<advt::xy_pos, 2>{ (*i), (*j) });
         }
     }
 
@@ -55,7 +58,7 @@ areas_map_t part1_find_areas(const points_t &points)
 
 void normalize_dir(advt::xy_pos &dir)
 {
-    int max = std::max(std::abs(dir.x), std::abs(dir.y));
+    const int max = std::max(std::abs(dir.x), std::abs(dir.y));
     if (max == 0)
         throw std::runtime_error("Max is zero!");
     dir.x /= max;
@@ -69,13 +72,37 @@ int determine_turn(const advt::xy_pos &last_dir, const advt::xy_pos &dir)
         (last_dir == advt::xy_pos{ -1, 0 } && dir == advt::xy_pos{ 0, -1 }) ||
         (last_dir == advt::xy_pos{ 0, -1 } && dir == advt::xy_pos{ 1, 0 }))
         return 90;
-    else if ((last_dir == advt::xy_pos{ 0, 1 } && dir == advt::xy_pos{ 1, 0 }) ||
+    if ((last_dir == advt::xy_pos{ 0, 1 } && dir == advt::xy_pos{ 1, 0 }) ||
              (last_dir == advt::xy_pos{ 1, 0 } && dir == advt::xy_pos{ 0, -1 }) ||
              (last_dir == advt::xy_pos{ 0, -1 } && dir == advt::xy_pos{ -1, 0 }) ||
              (last_dir == advt::xy_pos{ -1, 0 } && dir == advt::xy_pos{ 0, 1 }))
         return -90;
 
     return 0;
+}
+
+advt::xy_pos create_turn(const advt::xy_pos &dir, bool clockwise)
+{
+    if (clockwise) {
+        if (dir == advt::xy_pos{ 1, 0 })
+            return advt::xy_pos{ 0, 1 };
+        if (dir == advt::xy_pos{ 0, 1 })
+            return advt::xy_pos{ -1, 0 };
+        if (dir == advt::xy_pos{ -1, 0 })
+            return advt::xy_pos{ 0, -1 };
+        if (dir == advt::xy_pos{ 0, -1 })
+            return advt::xy_pos{ 1, 0 };
+    } else {
+        if (dir == advt::xy_pos{ 1, 0 })
+            return advt::xy_pos{ 0, -1 };
+        if (dir == advt::xy_pos{ 0, -1 })
+            return advt::xy_pos{ -1, 0 };
+        if (dir == advt::xy_pos{ -1, 0 })
+            return advt::xy_pos{ 0, 1 };
+        if (dir == advt::xy_pos{ 0, 1 })
+            return advt::xy_pos{ 1, 0 };
+    }
+    throw std::runtime_error("Cannot determine turn!");
 }
 
 std::tuple<map_t, bool> part2_trace_points(const points_t &points)
@@ -94,7 +121,7 @@ std::tuple<map_t, bool> part2_trace_points(const points_t &points)
         advt::xy_pos trace = *i;
         to_last_point = -last_dir;
         while (trace != *i2) {
-            map.emplace(trace, std::array<advt::xy_pos, 2>{dir, to_last_point});
+            map.emplace(trace, std::array<advt::xy_pos, 2>{ dir, to_last_point });
             trace += dir;
             to_last_point = -dir;
         }
@@ -108,42 +135,49 @@ std::tuple<map_t, bool> part2_trace_points(const points_t &points)
     return { map, degrees > 0 };
 }
 
-bool check_point(const map_t & map, const advt::xy_pos & pt, const advt::xy_pos & dir)
+keepout_map_t part2_gen_keepout(const map_t &map, bool clockwise)
+{
+    keepout_map_t keepout;
+    for (const auto &point : map) {
+        const auto dir = create_turn(point.second.at(0), !clockwise);
+        const auto pt1 = point.first + dir;
+        const auto dir2 = create_turn(point.second.at(1), clockwise);
+        const auto pt2 = point.first + dir2;
+        if (!keepout.contains(pt1) && !map.contains(pt1))
+            keepout.emplace(pt1, 0);
+        if (!keepout.contains(pt2) && !map.contains(pt2))
+            keepout.emplace(pt2, 0);
+    }
+    return keepout;
+}
+
+bool check_point(const map_t &map, const advt::xy_pos &pt, const advt::xy_pos &dir)
 {
     //if no line in that direction return true
     if (!map.contains(pt + dir))
         return true;
 
-    int degrees = determine_turn(dir, map.at(pt + dir)[0]);
-    int degrees2 = determine_turn(dir, map.at(pt + dir)[1]);
-    
+    const int degrees = determine_turn(dir, map.at(pt + dir)[0]);
+    const int degrees2 = determine_turn(dir, map.at(pt + dir)[1]);
+
     return degrees >= 0 && degrees2 <= 0;
 }
 
-bool part2_check_rectangle(const map_t &map, const std::array<advt::xy_pos, 2> &rect)
+bool part2_check_rectangle(const std::array<advt::xy_pos, 2> &rect, const keepout_map_t &keepout)
 {
-    std::array<advt::xy_pos, 4> pts = { rect.at(0), advt::xy_pos{ rect.at(0).x, rect.at(1).y }, rect.at(1),
-                                        advt::xy_pos{ rect.at(1).x, rect.at(0).y } };
+    std::array<advt::xy_pos, 4> points = { rect.at(0), advt::xy_pos{ rect.at(0).x, rect.at(1).y }, rect.at(1),
+                                           advt::xy_pos{ rect.at(1).x, rect.at(0).y } };
 
-    std::array<advt::xy_pos, 4> check_pts = { advt::xy_pos{ 1, 0 }, advt::xy_pos{ 0, 1 }, advt::xy_pos{ -1, 0 },
-                                                  advt::xy_pos{ 0, -1 } };
-
-    for (auto i = pts.begin(); i < pts.end(); i++) {
-        auto i2 = i + 1;
-        if (i2 == pts.end())
-            i2 = pts.begin();
+    for (auto *i = points.begin(); i < points.end(); i++) {
+        auto *i2 = i + 1;
+        if (i2 == points.end())
+            i2 = points.begin();
         advt::xy_pos dir = (*i2) - (*i);
         normalize_dir(dir);
         advt::xy_pos trace = *i;
         while (trace != *i2) {
-            if (map.contains(trace)) {
-                trace += dir;
-                continue;
-            }
-            for (const auto & check_pt : check_pts) {
-                if (!check_point(map, trace, check_pt))
-                    return false;
-            }
+            if (keepout.contains(trace))
+                return false;
             trace += dir;
         }
     }
@@ -160,12 +194,13 @@ int main()
     std::cout << (*areas.rbegin()).first << '\n';
 
     const auto [map, clockwise] = part2_trace_points(points);
+    const auto keepout = part2_gen_keepout(map, clockwise);
 
-    long part2_answer {0};
-    int test {0};
+    long part2_answer{ 0 };
+    int test{ 0 };
 
     for (auto i = areas.rbegin(); i != areas.rend(); i++) {
-        bool pass = part2_check_rectangle(map, (*i).second);
+        const bool pass = part2_check_rectangle((*i).second, keepout);
         if (pass) {
             part2_answer = (*i).first;
             break;
@@ -173,7 +208,6 @@ int main()
         std::cout << test << '\n';
         test++;
     }
-    
 
     std::cout << part2_answer << '\n';
 }

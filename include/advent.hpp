@@ -123,6 +123,6 @@ struct std::hash<advt::xy_pos> {
         // and combine them using XOR
         // and bit shifting:
 
-        return hash<int>{}(k.x) ^ (hash<int>{}(k.y) << 1u);
+        return hash<int>{}(k.x) ^ (hash<int>{}(k.y) << 1U);
     }
 };
