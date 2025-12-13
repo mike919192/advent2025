@@ -73,9 +73,9 @@ int determine_turn(const advt::xy_pos &last_dir, const advt::xy_pos &dir)
         (last_dir == advt::xy_pos{ 0, -1 } && dir == advt::xy_pos{ 1, 0 }))
         return 90;
     if ((last_dir == advt::xy_pos{ 0, 1 } && dir == advt::xy_pos{ 1, 0 }) ||
-             (last_dir == advt::xy_pos{ 1, 0 } && dir == advt::xy_pos{ 0, -1 }) ||
-             (last_dir == advt::xy_pos{ 0, -1 } && dir == advt::xy_pos{ -1, 0 }) ||
-             (last_dir == advt::xy_pos{ -1, 0 } && dir == advt::xy_pos{ 0, 1 }))
+        (last_dir == advt::xy_pos{ 1, 0 } && dir == advt::xy_pos{ 0, -1 }) ||
+        (last_dir == advt::xy_pos{ 0, -1 } && dir == advt::xy_pos{ -1, 0 }) ||
+        (last_dir == advt::xy_pos{ -1, 0 } && dir == advt::xy_pos{ 0, 1 }))
         return -90;
 
     return 0;
@@ -149,18 +149,6 @@ keepout_map_t part2_gen_keepout(const map_t &map, bool clockwise)
             keepout.emplace(pt2, 0);
     }
     return keepout;
-}
-
-bool check_point(const map_t &map, const advt::xy_pos &pt, const advt::xy_pos &dir)
-{
-    //if no line in that direction return true
-    if (!map.contains(pt + dir))
-        return true;
-
-    const int degrees = determine_turn(dir, map.at(pt + dir)[0]);
-    const int degrees2 = determine_turn(dir, map.at(pt + dir)[1]);
-
-    return degrees >= 0 && degrees2 <= 0;
 }
 
 bool part2_check_rectangle(const std::array<advt::xy_pos, 2> &rect, const keepout_map_t &keepout)
