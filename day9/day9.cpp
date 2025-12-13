@@ -177,17 +177,33 @@ int main()
 {
     const auto points = read_file("input.txt");
 
+    //gets all possible areas
+    //creates a multimap
+    //key is area
+    //value is 2 points that made the rectangle
     const auto areas = part1_find_areas(points);
 
     std::cout << (*areas.rbegin()).first << '\n';
 
+    //connect the points
+    //map is unordered_map
+    //key is xy_point
+    //value is array of 2 vectors, next point and prev point
+    //clockwise is a bool if we traced in clockwise direction
     const auto [map, clockwise] = part2_trace_points(points);
+
+    //keepout is a unordered map of points outside the connected points
+    //key is xy_point
+    //value is unused
+    //if any rectangles overlap the keepout then they are not valid
     const auto keepout = part2_gen_keepout(map, clockwise);
 
     long part2_answer{ 0 };
     int test{ 0 };
 
     for (auto i = areas.rbegin(); i != areas.rend(); i++) {
+        //loop the rectangles started with largest
+        //only pass if the rectangle lines do not overlap any keepout
         const bool pass = part2_check_rectangle((*i).second, keepout);
         if (pass) {
             part2_answer = (*i).first;
