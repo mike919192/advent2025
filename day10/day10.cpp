@@ -5,11 +5,13 @@
 #include <string>
 #include <vector>
 
-using wiring = std::vector<int>;
+using wiring_t = std::vector<int>;
+using mat_row_t = std::vector<int>;
+using mat_t = std::vector<mat_row_t>;
 
 struct machine {
     std::vector<char> indicators;
-    std::vector<wiring> buttons;
+    std::vector<wiring_t> buttons;
     std::vector<int> joltage;
 };
 
@@ -101,9 +103,70 @@ u_int32_t part1_try_permutations(const machine_bits &mach)
     return std::popcount(min);
 }
 
+mat_t part2_machine_to_mat(const machine &mach)
+{
+    mat_t mat(mach.joltage.size());
+    {
+        size_t i{ 0 };
+        for (auto &row : mat) {
+            row = mat_row_t(mach.buttons.size() + 1);
+            row.back() = mach.joltage.at(i);
+            i++;
+        }
+    }
+    {
+        size_t i{ 0 };
+        for (const auto &button : mach.buttons) {
+            for (auto wire : button)
+                mat.at(wire).at(i) = 1;
+            i++;
+        }
+    }
+
+    return mat;
+}
+
+void part2_row_reduce_mat(mat_t &mat)
+{
+    size_t col{ 0 };
+    for (size_t i = 0; i < mat.size(); i++) {
+        bool swapped{ false };
+        //swap to make leading 1 match column count
+        if (mat.at(i).at(col) != 1) {
+            for (size_t j = i; j < mat.size(); j++) {
+                if (j == i)
+                    continue;
+                if (mat.at(j).at(i) == 1) {
+                    mat.at(j).swap(mat.at(i));
+                    swapped = true;
+                    break;
+                }
+            }
+            if (!swapped) {
+                //increment col and try again
+                i--;
+                col++;
+                continue;
+            }
+        }
+
+        //subtract any above and below it
+        for (size_t j = 0; j < mat.size(); j++) {
+            if (j == i)
+                continue;
+            if (mat.at(j).at(col) == 1) {
+                //mat.at(j) -= mat.at(i)
+                for (size_t k = 0; k < mat.at(0).size(); k++)
+                    mat.at(j).at(k) -= mat.at(i).at(k);
+            }
+        }
+        col++;
+    }
+}
+
 int main()
 {
-    const auto machines = read_file("input.txt");
+    const auto machines = read_file("test.txt");
     std::vector<machine_bits> machine_bits;
 
     for (const auto &mach : machines)
@@ -114,4 +177,7 @@ int main()
         part1_result += part1_try_permutations(mach_bits);
 
     std::cout << part1_result << '\n';
+
+    auto mat = part2_machine_to_mat(machines.front());
+    part2_row_reduce_mat(mat);
 }
