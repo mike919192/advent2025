@@ -153,24 +153,14 @@ keepout_map_t part2_gen_keepout(const map_t &map, bool clockwise)
 
 bool part2_check_rectangle(const std::array<advt::xy_pos, 2> &rect, const keepout_map_t &keepout)
 {
-    std::array<advt::xy_pos, 4> points = { rect.at(0), advt::xy_pos{ rect.at(0).x, rect.at(1).y }, rect.at(1),
-                                           advt::xy_pos{ rect.at(1).x, rect.at(0).y } };
+    const int low_x = std::min(rect[0].x, rect[1].x);
+    const int high_x = std::max(rect[0].x, rect[1].x);
+    const int low_y = std::min(rect[0].y, rect[1].y);
+    const int high_y = std::max(rect[0].y, rect[1].y);
 
-    for (auto *i = points.begin(); i < points.end(); i++) {
-        auto *i2 = i + 1;
-        if (i2 == points.end())
-            i2 = points.begin();
-        advt::xy_pos dir = (*i2) - (*i);
-        normalize_dir(dir);
-        advt::xy_pos trace = *i;
-        while (trace != *i2) {
-            if (keepout.contains(trace))
-                return false;
-            trace += dir;
-        }
-    }
-
-    return true;
+    return std::ranges::all_of(keepout, [&low_x, &high_x, &low_y, &high_y](const auto &a) {
+        return !(a.first.x >= low_x && a.first.x <= high_x && a.first.y >= low_y && a.first.y <= high_y);
+    });
 }
 
 int main()
@@ -199,7 +189,6 @@ int main()
     const auto keepout = part2_gen_keepout(map, clockwise);
 
     long part2_answer{ 0 };
-    int test{ 0 };
 
     for (auto i = areas.rbegin(); i != areas.rend(); i++) {
         //loop the rectangles started with largest
@@ -209,8 +198,6 @@ int main()
             part2_answer = (*i).first;
             break;
         }
-        std::cout << test << '\n';
-        test++;
     }
 
     std::cout << part2_answer << '\n';
