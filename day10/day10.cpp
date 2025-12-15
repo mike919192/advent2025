@@ -132,14 +132,14 @@ mat_t part2_machine_to_mat(const machine &mach)
 void part2_row_reduce_mat(mat_t &mat)
 {
     size_t col{ 0 };
-    for (size_t i = 0; i < mat.size(); i++) {
+    for (size_t i = 0; i < mat.size() && col < mat.at(0).size() - 1; i++) {
         bool swapped{ false };
         //swap to make leading 1 match column count
-        if (mat.at(i).at(col) != 1) {
+        if (mat.at(i).at(col) == 0) {
             for (size_t j = i; j < mat.size(); j++) {
                 if (j == i)
                     continue;
-                if (mat.at(j).at(i) == 1) {
+                if (mat.at(j).at(i) != 0) {
                     mat.at(j).swap(mat.at(i));
                     swapped = true;
                     break;
@@ -153,17 +153,38 @@ void part2_row_reduce_mat(mat_t &mat)
             }
         }
 
+        //scale the first to 1
+        if (mat.at(i).at(col) == -1) {
+            for (size_t k = 0; k < mat.at(0).size(); k++)
+                mat.at(i).at(k) *= -1;
+        }
+        if (mat.at(i).at(col) != 1)
+            throw std::runtime_error("Row is not started with 1!");
+
         //subtract any above and below it
         for (size_t j = 0; j < mat.size(); j++) {
             if (j == i)
                 continue;
-            if (mat.at(j).at(col) == 1) {
-                //mat.at(j) -= mat.at(i)
-                for (size_t k = 0; k < mat.at(0).size(); k++)
-                    mat.at(j).at(k) -= mat.at(i).at(k);
+            while (mat.at(j).at(col) != 0) {
+                if (mat.at(j).at(col) > 0) {
+                    //mat.at(j) -= mat.at(i)
+                    for (size_t k = 0; k < mat.at(0).size(); k++)
+                        mat.at(j).at(k) -= mat.at(i).at(k);
+                } else if (mat.at(j).at(col) < 0) {
+                    for (size_t k = 0; k < mat.at(0).size(); k++)
+                        mat.at(j).at(k) += mat.at(i).at(k);
+                }
             }
         }
         col++;
+    }
+
+    //remove any rows with all zeros
+    for (auto i = mat.begin(); i < mat.end();) {
+        if (std::ranges::all_of(*i, [](auto a) { return a == 0; }))
+            mat.erase(i);
+        else
+            ++i;
     }
 }
 
@@ -171,7 +192,7 @@ std::vector<int> part2_find_free_vars(const mat_t &mat)
 {
     std::vector<int> free_vars;
     size_t col{ 0 };
-    for (size_t i = 0; i < mat.size(); i++) {
+    for (size_t i = 0; i < mat.size() && col < mat.at(0).size() - 1; i++) {
         if (mat.at(i).at(col) != 1) {
             //found free_var
             free_vars.emplace_back(col);
