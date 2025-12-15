@@ -1,6 +1,9 @@
 
+#include "advent.hpp"
+#include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -164,6 +167,89 @@ void part2_row_reduce_mat(mat_t &mat)
     }
 }
 
+std::vector<int> part2_find_free_vars(const mat_t &mat)
+{
+    std::vector<int> free_vars;
+    size_t col{ 0 };
+    for (size_t i = 0; i < mat.size(); i++) {
+        if (mat.at(i).at(col) != 1) {
+            //found free_var
+            free_vars.emplace_back(col);
+            i--;
+        }
+        col++;
+    }
+
+    while (col + 1 < mat.at(0).size()) {
+        free_vars.emplace_back(col);
+        col++;
+    }
+
+    return free_vars;
+}
+
+int part2_solve_mat(const mat_t &mat, const std::vector<int> &free_vars, std::span<const int> vals)
+{
+    auto mat_mut = mat;
+    std::vector<u_int8_t> val_found(mat.at(0).size() - 1);
+    std::vector<int> test_vals(mat.at(0).size() - 1);
+    {
+        size_t i{ 0 };
+        for (auto var : free_vars) {
+            val_found.at(var) = true;
+            test_vals.at(var) = vals[i];
+            i++;
+        }
+    }
+
+    //fill in the known vals
+    for (auto &row : mat_mut) {
+        size_t i{ 0 };
+        for (auto var : test_vals) {
+            if (val_found.at(i) && row.at(i) != 0) {
+                row.back() -= var * row.at(i);
+                row.at(i) = 0;
+            }
+            i++;
+        }
+    }
+
+    //look for new variables that can be assigned values
+    for (auto &row : mat_mut) {
+        //if there is only one entry we can assign the value
+        const int num_nonzeros =
+            std::accumulate(row.begin(), row.end() - 1, 0, [](auto a, auto b) { return b += a != 0 ? 1 : 0; });
+        if (num_nonzeros == 1) {
+            const auto nonzero_iter = std::ranges::find_if(row, [](auto a) { return a != 0; });
+            const auto index = std::distance(row.begin(), nonzero_iter);
+            val_found.at(index) = true;
+            test_vals.at(index) = row.back();
+            row.clear();
+        }
+    }
+
+    //remove empty arrays
+    for (auto i = mat_mut.begin(); i < mat_mut.end();) {
+        if ((*i).empty())
+            mat_mut.erase(i);
+        else
+            ++i;
+    }
+
+    if (!mat_mut.empty())
+        throw std::runtime_error("mat_mut not empty!");
+    if (!std::ranges::all_of(val_found, [](auto a) { return a == true; }))
+        throw std::runtime_error("All values not found!");
+
+    //if any variables are negative then values are not a solution
+    if (std::ranges::all_of(test_vals, [](auto a) { return a >= 0; })) {
+        //if values are a solution, count the button presses, we are looking for the minimum
+        return std::accumulate(test_vals.begin(), test_vals.end(), 0);
+    }
+
+    return -1;
+}
+
 int main()
 {
     const auto machines = read_file("test.txt");
@@ -178,6 +264,24 @@ int main()
 
     std::cout << part1_result << '\n';
 
-    auto mat = part2_machine_to_mat(machines.front());
-    part2_row_reduce_mat(mat);
+    long part2_result{ 0 };
+
+    for (const auto &mach : machines) {
+        auto mat = part2_machine_to_mat(mach);
+        part2_row_reduce_mat(mat);
+        const auto free_vars = part2_find_free_vars(mat);
+        const auto max_val =
+            std::ranges::max_element(mat, [](const auto &a, const auto &b) { return a.back() < b.back(); });
+
+        advt::permutator<int> perm(free_vars.size(), (*max_val).back());
+        int min_presses{ std::numeric_limits<int>::max() };
+
+        do {
+            const auto presses = part2_solve_mat(mat, free_vars, perm.get_nums());
+            if (presses > 0)
+                min_presses = std::min(min_presses, presses);
+            std::cout << "HALLO" << '\n';
+        } while (perm.next_permutation());
+        part2_result += min_presses;
+    }
 }

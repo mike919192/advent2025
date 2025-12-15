@@ -1,7 +1,10 @@
 
 #pragma once
 
+#include <algorithm>
+#include <span>
 #include <stdexcept>
+#include <vector>
 
 namespace advt
 {
@@ -110,6 +113,38 @@ struct map : public t_t {
     auto &&at_pos(int x, int y)
     {
         return this->at(y).at(x);
+    }
+};
+
+template <typename t_t, t_t reset_value = 0>
+struct permutator {
+private:
+    std::vector<t_t> m_nums{};
+    t_t m_max_value;
+
+public:
+    permutator(size_t n, t_t max_value) : m_max_value(max_value)
+    {
+        m_nums = std::vector<t_t>(n, reset_value);
+    }
+
+    //return false when the permutation repeats
+    bool next_permutation()
+    {
+        for (auto &num : m_nums) {
+            if (num == m_max_value) {
+                num = reset_value;
+            } else {
+                num++;
+                break;
+            }
+        }
+        return !std::ranges::all_of(m_nums, [](auto i) { return i == reset_value; });
+    }
+
+    std::span<const t_t> get_nums()
+    {
+        return std::span(m_nums);
     }
 };
 
