@@ -2,6 +2,7 @@
 #pragma once
 
 #include <algorithm>
+#include <numeric>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -170,21 +171,46 @@ struct fraction {
         denom = b;
     }
 
+    void simplify()
+    {
+        int gcd = std::gcd(nom, denom);
+        if (denom < 0)
+            gcd *= -1;
+        nom /= gcd;
+        denom /= gcd;
+    }
+
+    void reciprocal()
+    {
+        std::swap(nom, denom);
+    }
+
     // compound assignment (does not need to be a member,
     // but often is, to modify the private members)
     fraction &operator+=(const fraction &rhs)
     {
-        if (denom != rhs.denom)
-            throw std::runtime_error("Denoms not equal");
+        if (denom != rhs.denom) {
+            int lcd = std::lcm(denom, rhs.denom);
+            int scale = lcd / denom;
+            int rhs_scale = lcd / rhs.denom;
+            denom = lcd;
+            nom = nom * scale + rhs.nom * rhs_scale;
+            simplify();
+            return *this;
+        }
         nom += rhs.nom;
+        simplify();
         return *this; // return the result by reference
+    }
+
+    fraction operator-() const
+    {
+        return fraction(-nom, denom);
     }
 
     fraction &operator-=(const fraction &rhs)
     {
-        if (denom != rhs.denom)
-            throw std::runtime_error("Denoms not equal");
-        nom -= rhs.nom;
+        *this += -rhs;
         return *this; // return the result by reference
     }
 
@@ -192,6 +218,15 @@ struct fraction {
     {
         nom *= rhs.nom;
         denom *= rhs.denom;
+        simplify();
+        return *this; // return the result by reference
+    }
+
+    fraction &operator/=(const fraction &rhs)
+    {
+        nom *= rhs.denom;
+        denom *= rhs.nom;
+        simplify();
         return *this; // return the result by reference
     }
 
@@ -216,9 +251,10 @@ struct fraction {
         return lhs; // return the result by value (uses move constructor)
     }
 
-    fraction operator-() const
+    friend fraction operator/(fraction lhs, const fraction &rhs)
     {
-        return fraction(-nom, -denom);
+        lhs /= rhs; // reuse compound assignment
+        return lhs; // return the result by value (uses move constructor)
     }
 
     friend bool operator<(const fraction &lhs, const fraction &rhs)

@@ -154,9 +154,10 @@ void part2_row_reduce_mat(mat_t &mat)
         }
 
         //scale the first to 1
-        if (mat.at(i).at(col) == -1) {
+        if (mat.at(i).at(col) != 1) {
+            const auto scale = mat.at(i).at(col);
             for (size_t k = 0; k < mat.at(0).size(); k++)
-                mat.at(i).at(k) *= -1;
+                mat.at(i).at(k) /= scale;
         }
         if (mat.at(i).at(col) != 1)
             throw std::runtime_error("Row is not started with 1!");
@@ -273,6 +274,11 @@ int part2_solve_mat(const mat_t &mat, const std::vector<int> &free_vars, std::sp
 
 int main()
 {
+    //quick tests
+    advt::fraction a = 1;
+    auto b = a / 2;
+    auto c = b * 2;
+    auto d = b - 1;
     const auto machines = read_file("test.txt");
     std::vector<machine_bits> machine_bits;
 
