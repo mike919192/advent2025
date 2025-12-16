@@ -148,6 +148,112 @@ public:
     }
 };
 
+struct fraction {
+    int nom{ 0 };
+    int denom{ 1 };
+
+    fraction()
+    {
+        nom = 0;
+        denom = 1;
+    }
+
+    fraction(int a)
+    {
+        nom = a;
+        denom = 1;
+    }
+
+    fraction(int a, int b)
+    {
+        nom = a;
+        denom = b;
+    }
+
+    // compound assignment (does not need to be a member,
+    // but often is, to modify the private members)
+    fraction &operator+=(const fraction &rhs)
+    {
+        if (denom != rhs.denom)
+            throw std::runtime_error("Denoms not equal");
+        nom += rhs.nom;
+        return *this; // return the result by reference
+    }
+
+    fraction &operator-=(const fraction &rhs)
+    {
+        if (denom != rhs.denom)
+            throw std::runtime_error("Denoms not equal");
+        nom -= rhs.nom;
+        return *this; // return the result by reference
+    }
+
+    fraction &operator*=(const fraction &rhs)
+    {
+        nom *= rhs.nom;
+        denom *= rhs.denom;
+        return *this; // return the result by reference
+    }
+
+    // friends defined inside class body are inline and are hidden from non-ADL lookup
+    // passing lhs by value helps optimize chained a+b+c
+    // otherwise, both parameters may be const references
+    friend fraction operator+(fraction lhs, const fraction &rhs)
+    {
+        lhs += rhs; // reuse compound assignment
+        return lhs; // return the result by value (uses move constructor)
+    }
+
+    friend fraction operator-(fraction lhs, const fraction &rhs)
+    {
+        lhs -= rhs; // reuse compound assignment
+        return lhs; // return the result by value (uses move constructor)
+    }
+
+    friend fraction operator*(fraction lhs, const fraction &rhs)
+    {
+        lhs *= rhs; // reuse compound assignment
+        return lhs; // return the result by value (uses move constructor)
+    }
+
+    fraction operator-() const
+    {
+        return fraction(-nom, -denom);
+    }
+
+    friend bool operator<(const fraction &lhs, const fraction &rhs)
+    {
+        if (lhs.denom != rhs.denom)
+            throw std::runtime_error("Denoms not equal");
+        return lhs.nom < rhs.nom; // keep the same order
+    }
+
+    friend bool operator>(const fraction &lhs, const fraction &rhs)
+    {
+        return rhs < lhs;
+    }
+
+    friend bool operator<=(const fraction &lhs, const fraction &rhs)
+    {
+        return !(lhs > rhs);
+    }
+
+    friend bool operator>=(const fraction &lhs, const fraction &rhs)
+    {
+        return !(lhs < rhs);
+    }
+
+    friend bool operator==(const fraction &lhs, const fraction &rhs)
+    {
+        return lhs.nom == rhs.nom && lhs.denom == rhs.denom;
+    }
+
+    friend bool operator!=(const fraction &lhs, const fraction &rhs)
+    {
+        return !(lhs == rhs);
+    }
+};
+
 }
 
 template <>

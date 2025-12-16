@@ -9,7 +9,7 @@
 #include <vector>
 
 using wiring_t = std::vector<int>;
-using mat_row_t = std::vector<int>;
+using mat_row_t = std::vector<advt::fraction>;
 using mat_t = std::vector<mat_row_t>;
 
 struct machine {
@@ -239,12 +239,12 @@ int part2_solve_mat(const mat_t &mat, const std::vector<int> &free_vars, std::sp
     for (auto &row : mat_mut) {
         //if there is only one entry we can assign the value
         const int num_nonzeros =
-            std::accumulate(row.begin(), row.end() - 1, 0, [](auto a, auto b) { return b += a != 0 ? 1 : 0; });
+            std::accumulate(row.begin(), row.end() - 1, 0, [](auto a, auto b) { return a += b.nom != 0 ? 1 : 0; });
         if (num_nonzeros == 1) {
             const auto nonzero_iter = std::ranges::find_if(row, [](auto a) { return a != 0; });
             const auto index = std::distance(row.begin(), nonzero_iter);
             val_found.at(index) = true;
-            test_vals.at(index) = row.back();
+            test_vals.at(index) = row.back().nom;
             row.clear();
         }
     }
@@ -294,15 +294,16 @@ int main()
         const auto max_val =
             std::ranges::max_element(mat, [](const auto &a, const auto &b) { return a.back() < b.back(); });
 
-        advt::permutator<int> perm(free_vars.size(), (*max_val).back());
+        advt::permutator<int> perm(free_vars.size(), (*max_val).back().nom);
         int min_presses{ std::numeric_limits<int>::max() };
 
         do {
             const auto presses = part2_solve_mat(mat, free_vars, perm.get_nums());
             if (presses > 0)
                 min_presses = std::min(min_presses, presses);
-            std::cout << "HALLO" << '\n';
         } while (perm.next_permutation());
         part2_result += min_presses;
     }
+
+    std::cout << part2_result << '\n';
 }
