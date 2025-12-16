@@ -1,11 +1,18 @@
 
 #include "advent.hpp"
 #include <algorithm>
+#include <bit>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <iterator>
+#include <limits>
 #include <numeric>
+#include <span>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+#include <sys/types.h>
 #include <vector>
 
 using wiring_t = std::vector<int>;
@@ -42,14 +49,14 @@ struct machine_bits {
 std::vector<machine> read_file(const std::string &filename)
 {
     std::ifstream infile(filename);
-    std::vector<int> rotations;
     std::vector<machine> machines;
 
     for (std::string line; std::getline(infile, line);) {
         std::istringstream ss(line);
         machines.emplace_back();
         {
-            char indicator{ 0 }, left_bracket{ 0 };
+            char indicator{ 0 };
+            char left_bracket{ 0 };
             ss >> left_bracket >> indicator;
             while (indicator != ']') {
                 machines.back().indicators.push_back(indicator);
@@ -57,7 +64,8 @@ std::vector<machine> read_file(const std::string &filename)
             }
         }
         {
-            char left_paren{ 0 }, comma{ 0 };
+            char left_paren{ 0 };
+            char comma{ 0 };
             int wire{ 0 };
             ss >> left_paren;
             while (left_paren == '(') {
@@ -84,14 +92,14 @@ std::vector<machine> read_file(const std::string &filename)
 
 u_int32_t part1_try_permutations(const machine_bits &mach)
 {
-    u_int32_t button_count = static_cast<u_int32_t>(mach.buttons.size());
-    u_int32_t button_bits = 1U << button_count;
+    const auto button_count = static_cast<u_int32_t>(mach.buttons.size());
+    const u_int32_t button_bits = 1U << button_count;
     std::vector<u_int32_t> results;
 
     for (u_int32_t i = 1; i < button_bits; i++) {
         u_int32_t result{ 0 };
         for (u_int32_t j = 0; j < button_count; j++) {
-            u_int32_t bit_position = 1U << j;
+            const u_int32_t bit_position = 1U << j;
             if (i & bit_position) {
                 result = result ^ mach.buttons.at(j);
             }
@@ -101,23 +109,25 @@ u_int32_t part1_try_permutations(const machine_bits &mach)
         }
     }
 
-    u_int32_t min = std::ranges::min(results, [](auto a, auto b) { return std::popcount(a) < std::popcount(b); });
+    const u_int32_t min = std::ranges::min(results, [](auto a, auto b) { return std::popcount(a) < std::popcount(b); });
 
     return std::popcount(min);
 }
 
 void print_mat(const mat_t &mat)
 {
-    // for (const auto & row : mat) {
-    //     for (const auto & el : row) {
-    //         std::cout << el.nom;
-    //         if (el.denom != 1)
-    //             std::cout << '/' << el.denom;
-    //         std::cout << '\t';
-    //     }
-    //     std::cout << '\n';
-    // }
-    // std::cout << "------------------------------------------------------------\n";
+    if constexpr (false) {
+        for (const auto &row : mat) {
+            for (const auto &el : row) {
+                std::cout << el.num;
+                if (el.denom != 1)
+                    std::cout << '/' << el.denom;
+                std::cout << '\t';
+            }
+            std::cout << '\n';
+        }
+        std::cout << "------------------------------------------------------------\n";
+    }
 }
 
 mat_t part2_machine_to_mat(const machine &mach)
@@ -257,7 +267,7 @@ int part2_solve_mat(const mat_t &mat, const std::vector<int> &free_vars, std::sp
         for (auto &row : mat_mut) {
             //if there is only one entry we can assign the value
             const int num_nonzeros =
-                std::accumulate(row.begin(), row.end() - 1, 0, [](auto a, auto b) { return a += b.nom != 0 ? 1 : 0; });
+                std::accumulate(row.begin(), row.end() - 1, 0, [](auto a, auto b) { return a += b.num != 0 ? 1 : 0; });
             if (num_nonzeros == 1) {
                 const auto nonzero_iter = std::ranges::find_if(row, [](auto a) { return a != 0; });
                 const auto index = std::distance(row.begin(), nonzero_iter);
@@ -284,7 +294,7 @@ int part2_solve_mat(const mat_t &mat, const std::vector<int> &free_vars, std::sp
     //if any variables are negative then values are not a solution
     if (std::ranges::all_of(test_vals, [](auto a) { return a >= 0 && a.denom == 1; })) {
         //if values are a solution, count the button presses, we are looking for the minimum
-        return std::accumulate(test_vals.begin(), test_vals.end(), 0, [](auto a, auto b) { return a += b.nom; });
+        return std::accumulate(test_vals.begin(), test_vals.end(), 0, [](auto a, auto b) { return a += b.num; });
     }
 
     return -1;
@@ -292,11 +302,6 @@ int part2_solve_mat(const mat_t &mat, const std::vector<int> &free_vars, std::sp
 
 int main()
 {
-    //quick tests
-    advt::fraction a = 1;
-    auto b = a / 2;
-    auto c = b * 2;
-    auto d = b - 1;
     const auto machines = read_file("input.txt");
     std::vector<machine_bits> machine_bits;
 
@@ -320,7 +325,7 @@ int main()
         const auto max_val =
             std::ranges::max_element(mat, [](const auto &a, const auto &b) { return a.back() < b.back(); });
 
-        advt::permutator<int> perm(free_vars.size(), (*max_val).back().nom);
+        advt::permutator<int> perm(free_vars.size(), (*max_val).back().num);
         int min_presses{ std::numeric_limits<int>::max() };
 
         do {

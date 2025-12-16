@@ -117,16 +117,15 @@ struct map : public t_t {
     }
 };
 
-template <typename t_t, t_t reset_value = 0>
+template <typename t_t, t_t reset_value_t = 0>
 struct permutator {
 private:
     std::vector<t_t> m_nums{};
     t_t m_max_value;
 
 public:
-    permutator(size_t n, t_t max_value) : m_max_value(max_value)
+    permutator(size_t n, t_t max_value) : m_nums(n, reset_value_t), m_max_value(max_value)
     {
-        m_nums = std::vector<t_t>(n, reset_value);
     }
 
     //return false when the permutation repeats
@@ -134,13 +133,13 @@ public:
     {
         for (auto &num : m_nums) {
             if (num == m_max_value) {
-                num = reset_value;
+                num = reset_value_t;
             } else {
                 num++;
                 break;
             }
         }
-        return !std::ranges::all_of(m_nums, [](auto i) { return i == reset_value; });
+        return !std::ranges::all_of(m_nums, [](auto i) { return i == reset_value_t; });
     }
 
     std::span<const t_t> get_nums()
@@ -150,39 +149,31 @@ public:
 };
 
 struct fraction {
-    int nom{ 0 };
+    int num{ 0 };
     int denom{ 1 };
 
-    fraction()
+    fraction() = default;
+
+    fraction(int a) : num(a)
     {
-        nom = 0;
-        denom = 1;
     }
 
-    fraction(int a)
+    fraction(int a, int b) : num(a), denom(b)
     {
-        nom = a;
-        denom = 1;
-    }
-
-    fraction(int a, int b)
-    {
-        nom = a;
-        denom = b;
     }
 
     void simplify()
     {
-        int gcd = std::gcd(nom, denom);
+        int gcd = std::gcd(num, denom);
         if (denom < 0)
             gcd *= -1;
-        nom /= gcd;
+        num /= gcd;
         denom /= gcd;
     }
 
     void reciprocal()
     {
-        std::swap(nom, denom);
+        std::swap(num, denom);
     }
 
     // compound assignment (does not need to be a member,
@@ -190,22 +181,22 @@ struct fraction {
     fraction &operator+=(const fraction &rhs)
     {
         if (denom != rhs.denom) {
-            int lcd = std::lcm(denom, rhs.denom);
-            int scale = lcd / denom;
-            int rhs_scale = lcd / rhs.denom;
+            const int lcd = std::lcm(denom, rhs.denom);
+            const int scale = lcd / denom;
+            const int rhs_scale = lcd / rhs.denom;
             denom = lcd;
-            nom = nom * scale + rhs.nom * rhs_scale;
+            num = (num * scale) + (rhs.num * rhs_scale);
             simplify();
             return *this;
         }
-        nom += rhs.nom;
+        num += rhs.num;
         simplify();
         return *this; // return the result by reference
     }
 
     fraction operator-() const
     {
-        return fraction(-nom, denom);
+        return { -num, denom };
     }
 
     fraction &operator-=(const fraction &rhs)
@@ -216,7 +207,7 @@ struct fraction {
 
     fraction &operator*=(const fraction &rhs)
     {
-        nom *= rhs.nom;
+        num *= rhs.num;
         denom *= rhs.denom;
         simplify();
         return *this; // return the result by reference
@@ -224,8 +215,8 @@ struct fraction {
 
     fraction &operator/=(const fraction &rhs)
     {
-        nom *= rhs.denom;
-        denom *= rhs.nom;
+        num *= rhs.denom;
+        denom *= rhs.num;
         simplify();
         return *this; // return the result by reference
     }
@@ -260,12 +251,12 @@ struct fraction {
     friend bool operator<(const fraction &lhs, const fraction &rhs)
     {
         if (lhs.denom != rhs.denom) {
-            int lcd = std::lcm(lhs.denom, rhs.denom);
-            int lhs_scale = lcd / lhs.denom;
-            int rhs_scale = lcd / rhs.denom;
-            return lhs.nom * lhs_scale < rhs.nom * rhs_scale;
+            const int lcd = std::lcm(lhs.denom, rhs.denom);
+            const int lhs_scale = lcd / lhs.denom;
+            const int rhs_scale = lcd / rhs.denom;
+            return lhs.num * lhs_scale < rhs.num * rhs_scale;
         }
-        return lhs.nom < rhs.nom; // keep the same order
+        return lhs.num < rhs.num; // keep the same order
     }
 
     friend bool operator>(const fraction &lhs, const fraction &rhs)
@@ -285,7 +276,7 @@ struct fraction {
 
     friend bool operator==(const fraction &lhs, const fraction &rhs)
     {
-        return lhs.nom == rhs.nom && lhs.denom == rhs.denom;
+        return lhs.num == rhs.num && lhs.denom == rhs.denom;
     }
 
     friend bool operator!=(const fraction &lhs, const fraction &rhs)
