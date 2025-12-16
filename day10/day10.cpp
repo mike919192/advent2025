@@ -106,6 +106,20 @@ u_int32_t part1_try_permutations(const machine_bits &mach)
     return std::popcount(min);
 }
 
+void print_mat(const mat_t &mat)
+{
+    // for (const auto & row : mat) {
+    //     for (const auto & el : row) {
+    //         std::cout << el.nom;
+    //         if (el.denom != 1)
+    //             std::cout << '/' << el.denom;
+    //         std::cout << '\t';
+    //     }
+    //     std::cout << '\n';
+    // }
+    // std::cout << "------------------------------------------------------------\n";
+}
+
 mat_t part2_machine_to_mat(const machine &mach)
 {
     mat_t mat(mach.joltage.size());
@@ -139,7 +153,7 @@ void part2_row_reduce_mat(mat_t &mat)
             for (size_t j = i; j < mat.size(); j++) {
                 if (j == i)
                     continue;
-                if (mat.at(j).at(i) != 0) {
+                if (mat.at(j).at(col) != 0) {
                     mat.at(j).swap(mat.at(i));
                     swapped = true;
                     break;
@@ -153,6 +167,8 @@ void part2_row_reduce_mat(mat_t &mat)
             }
         }
 
+        print_mat(mat);
+
         //scale the first to 1
         if (mat.at(i).at(col) != 1) {
             const auto scale = mat.at(i).at(col);
@@ -161,6 +177,8 @@ void part2_row_reduce_mat(mat_t &mat)
         }
         if (mat.at(i).at(col) != 1)
             throw std::runtime_error("Row is not started with 1!");
+
+        print_mat(mat);
 
         //subtract any above and below it
         for (size_t j = 0; j < mat.size(); j++) {
@@ -173,6 +191,8 @@ void part2_row_reduce_mat(mat_t &mat)
                     mat.at(j).at(k) -= mat.at(i).at(k) * scale;
             }
         }
+
+        print_mat(mat);
         col++;
     }
 
@@ -210,7 +230,7 @@ int part2_solve_mat(const mat_t &mat, const std::vector<int> &free_vars, std::sp
 {
     auto mat_mut = mat;
     std::vector<u_int8_t> val_found(mat.at(0).size() - 1);
-    std::vector<int> test_vals(mat.at(0).size() - 1);
+    std::vector<advt::fraction> test_vals(mat.at(0).size() - 1);
     {
         size_t i{ 0 };
         for (auto var : free_vars) {
@@ -242,7 +262,7 @@ int part2_solve_mat(const mat_t &mat, const std::vector<int> &free_vars, std::sp
                 const auto nonzero_iter = std::ranges::find_if(row, [](auto a) { return a != 0; });
                 const auto index = std::distance(row.begin(), nonzero_iter);
                 val_found.at(index) = true;
-                test_vals.at(index) = row.back().nom;
+                test_vals.at(index) = row.back();
                 row.clear();
             }
         }
@@ -262,9 +282,9 @@ int part2_solve_mat(const mat_t &mat, const std::vector<int> &free_vars, std::sp
         throw std::runtime_error("All values not found!");
 
     //if any variables are negative then values are not a solution
-    if (std::ranges::all_of(test_vals, [](auto a) { return a >= 0; })) {
+    if (std::ranges::all_of(test_vals, [](auto a) { return a >= 0 && a.denom == 1; })) {
         //if values are a solution, count the button presses, we are looking for the minimum
-        return std::accumulate(test_vals.begin(), test_vals.end(), 0);
+        return std::accumulate(test_vals.begin(), test_vals.end(), 0, [](auto a, auto b) { return a += b.nom; });
     }
 
     return -1;
@@ -294,6 +314,7 @@ int main()
 
     for (const auto &mach : machines) {
         auto mat = part2_machine_to_mat(mach);
+        print_mat(mat);
         part2_row_reduce_mat(mat);
         const auto free_vars = part2_find_free_vars(mat);
         const auto max_val =
@@ -308,7 +329,7 @@ int main()
                 min_presses = std::min(min_presses, presses);
         } while (perm.next_permutation());
         part2_result += min_presses;
-        std::cout << i++ << '\n';
+        std::cout << i++ << ' ' << min_presses << '\n';
     }
 
     std::cout << part2_result << '\n';
