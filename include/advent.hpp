@@ -259,8 +259,12 @@ struct fraction {
 
     friend bool operator<(const fraction &lhs, const fraction &rhs)
     {
-        if (lhs.denom != rhs.denom)
-            throw std::runtime_error("Denoms not equal");
+        if (lhs.denom != rhs.denom) {
+            int lcd = std::lcm(lhs.denom, rhs.denom);
+            int lhs_scale = lcd / lhs.denom;
+            int rhs_scale = lcd / rhs.denom;
+            return lhs.nom * lhs_scale < rhs.nom * rhs_scale;
+        }
         return lhs.nom < rhs.nom; // keep the same order
     }
 

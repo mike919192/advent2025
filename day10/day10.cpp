@@ -166,15 +166,11 @@ void part2_row_reduce_mat(mat_t &mat)
         for (size_t j = 0; j < mat.size(); j++) {
             if (j == i)
                 continue;
-            while (mat.at(j).at(col) != 0) {
-                if (mat.at(j).at(col) > 0) {
-                    //mat.at(j) -= mat.at(i)
-                    for (size_t k = 0; k < mat.at(0).size(); k++)
-                        mat.at(j).at(k) -= mat.at(i).at(k);
-                } else if (mat.at(j).at(col) < 0) {
-                    for (size_t k = 0; k < mat.at(0).size(); k++)
-                        mat.at(j).at(k) += mat.at(i).at(k);
-                }
+            if (mat.at(j).at(col) != 0) {
+                const auto scale = mat.at(j).at(col);
+                //mat.at(j) -= mat.at(i)
+                for (size_t k = 0; k < mat.at(0).size(); k++)
+                    mat.at(j).at(k) -= mat.at(i).at(k) * scale;
             }
         }
         col++;
@@ -224,38 +220,40 @@ int part2_solve_mat(const mat_t &mat, const std::vector<int> &free_vars, std::sp
         }
     }
 
-    //fill in the known vals
-    for (auto &row : mat_mut) {
-        size_t i{ 0 };
-        for (auto var : test_vals) {
-            if (val_found.at(i) && row.at(i) != 0) {
-                row.back() -= var * row.at(i);
-                row.at(i) = 0;
+    while (!mat_mut.empty()) {
+        //fill in the known vals
+        for (auto &row : mat_mut) {
+            size_t i{ 0 };
+            for (auto var : test_vals) {
+                if (val_found.at(i) && row.at(i) != 0) {
+                    row.back() -= var * row.at(i);
+                    row.at(i) = 0;
+                }
+                i++;
             }
-            i++;
         }
-    }
 
-    //look for new variables that can be assigned values
-    for (auto &row : mat_mut) {
-        //if there is only one entry we can assign the value
-        const int num_nonzeros =
-            std::accumulate(row.begin(), row.end() - 1, 0, [](auto a, auto b) { return a += b.nom != 0 ? 1 : 0; });
-        if (num_nonzeros == 1) {
-            const auto nonzero_iter = std::ranges::find_if(row, [](auto a) { return a != 0; });
-            const auto index = std::distance(row.begin(), nonzero_iter);
-            val_found.at(index) = true;
-            test_vals.at(index) = row.back().nom;
-            row.clear();
+        //look for new variables that can be assigned values
+        for (auto &row : mat_mut) {
+            //if there is only one entry we can assign the value
+            const int num_nonzeros =
+                std::accumulate(row.begin(), row.end() - 1, 0, [](auto a, auto b) { return a += b.nom != 0 ? 1 : 0; });
+            if (num_nonzeros == 1) {
+                const auto nonzero_iter = std::ranges::find_if(row, [](auto a) { return a != 0; });
+                const auto index = std::distance(row.begin(), nonzero_iter);
+                val_found.at(index) = true;
+                test_vals.at(index) = row.back().nom;
+                row.clear();
+            }
         }
-    }
 
-    //remove empty arrays
-    for (auto i = mat_mut.begin(); i < mat_mut.end();) {
-        if ((*i).empty())
-            mat_mut.erase(i);
-        else
-            ++i;
+        //remove empty arrays
+        for (auto i = mat_mut.begin(); i < mat_mut.end();) {
+            if ((*i).empty())
+                mat_mut.erase(i);
+            else
+                ++i;
+        }
     }
 
     if (!mat_mut.empty())
@@ -279,7 +277,7 @@ int main()
     auto b = a / 2;
     auto c = b * 2;
     auto d = b - 1;
-    const auto machines = read_file("test.txt");
+    const auto machines = read_file("input.txt");
     std::vector<machine_bits> machine_bits;
 
     for (const auto &mach : machines)
@@ -292,6 +290,7 @@ int main()
     std::cout << part1_result << '\n';
 
     long part2_result{ 0 };
+    int i{ 0 };
 
     for (const auto &mach : machines) {
         auto mat = part2_machine_to_mat(mach);
@@ -309,6 +308,7 @@ int main()
                 min_presses = std::min(min_presses, presses);
         } while (perm.next_permutation());
         part2_result += min_presses;
+        std::cout << i++ << '\n';
     }
 
     std::cout << part2_result << '\n';
