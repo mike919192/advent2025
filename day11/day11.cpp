@@ -1,5 +1,6 @@
 
 #include <array>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -34,7 +35,7 @@ list_devices_t read_file(const std::string &filename)
 }
 
 int64_t part1_eval_device(const list_devices_t &devices, const std::string &dev_name, const std::string &dest_name,
-                      memo_map_t &memo_map)
+                          memo_map_t &memo_map)
 {
     const auto &outputs = devices.at(dev_name);
     int64_t ret_val{ 0 };
@@ -63,11 +64,11 @@ int main()
     }
 
     // const auto devices = read_file("test2.txt");
-    
-    std::array<std::array<std::string, 4>, 2> paths {"svr", "fft", "dac", "out", "svr", "dac", "fft", "out"};
+
+    const std::array<std::array<std::string, 4>, 2> paths{ "svr", "fft", "dac", "out", "svr", "dac", "fft", "out" };
 
     int64_t part2_result{ 0 };
-    for (const auto & path : paths) {
+    for (const auto &path : paths) {
         int64_t path_result{ 0 };
         memo_map_t memo_map;
         for (auto i = path.rbegin(); i < path.rend() - 1; ++i) {
