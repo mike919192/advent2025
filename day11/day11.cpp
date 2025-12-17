@@ -55,6 +55,7 @@ int64_t part1_eval_device(const list_devices_t &devices, const std::string &dev_
 
 int main()
 {
+    //pretty standard DP + memoization
     const auto devices = read_file("input.txt");
     {
         // const auto devices = read_file("test.txt");
@@ -67,6 +68,8 @@ int main()
 
     const std::array<std::array<std::string, 4>, 2> paths{ "svr", "fft", "dac", "out", "svr", "dac", "fft", "out" };
 
+    // The only additional work for part 2 is to do each segment of a possible path ("svr", "fft", "dac", "out") in reverse.
+    // After each segment reset the memo table except for the endpoint of the next segment.
     int64_t part2_result{ 0 };
     for (const auto &path : paths) {
         int64_t path_result{ 0 };
