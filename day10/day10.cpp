@@ -286,12 +286,10 @@ int part2_solve_mat(const mat_t &mat, const std::vector<int> &free_vars, std::sp
         }
     }
 
-    if (!mat_mut.empty())
-        throw std::runtime_error("mat_mut not empty!");
     if (!std::ranges::all_of(val_found, [](auto a) { return a == true; }))
         throw std::runtime_error("All values not found!");
 
-    //if any variables are negative then values are not a solution
+    //if any variables are negative or fractional then values are not a solution
     if (std::ranges::all_of(test_vals, [](auto a) { return a >= 0 && a.denom == 1; })) {
         //if values are a solution, count the button presses, we are looking for the minimum
         return std::accumulate(test_vals.begin(), test_vals.end(), 0, [](auto a, auto b) { return a += b.num; });
@@ -315,13 +313,14 @@ int main()
     std::cout << part1_result << '\n';
 
     long part2_result{ 0 };
-    int i{ 0 };
 
     for (const auto &mach : machines) {
         auto mat = part2_machine_to_mat(mach);
         print_mat(mat);
         part2_row_reduce_mat(mat);
         const auto free_vars = part2_find_free_vars(mat);
+        //for now we just set the max search value to the max value in the last column
+        //its innefficient but it works
         const auto max_val =
             std::ranges::max_element(mat, [](const auto &a, const auto &b) { return a.back() < b.back(); });
 
@@ -333,8 +332,9 @@ int main()
             if (presses > 0)
                 min_presses = std::min(min_presses, presses);
         } while (perm.next_permutation());
+        if (min_presses == std::numeric_limits<int>::max())
+            throw std::runtime_error("Valid solution was not found!");
         part2_result += min_presses;
-        std::cout << i++ << ' ' << min_presses << '\n';
     }
 
     std::cout << part2_result << '\n';
