@@ -36,19 +36,14 @@ list_devices_t read_file(const std::string &filename)
 int64_t part1_eval_device(const list_devices_t &devices, const std::string &dev_name, const std::string &dest_name,
                       memo_map_t &memo_map)
 {
-    //check if device is already in memo map
-    if (memo_map.contains(dev_name))
-        return memo_map.at(dev_name);
-
     const auto &outputs = devices.at(dev_name);
     int64_t ret_val{ 0 };
     for (const auto &output : outputs) {
-        if (output == dest_name) {
-            if (memo_map.contains(dest_name))
-                ret_val += memo_map.at(dest_name);
-            else
-                ret_val++;
-        }
+        //check if output is already in memo map
+        if (memo_map.contains(output))
+            ret_val += memo_map.at(output);
+        else if (output == dest_name)
+            ret_val++;
         else if (output != "out")
             ret_val += part1_eval_device(devices, output, dest_name, memo_map);
     }
